@@ -5,7 +5,9 @@ After=network.target
 [Service]
 Type=simple
 User=domainserver
-ExecStart=/usr/local/bin/deno run /home/domainserver/domain-server/main.ts
+Environment="PORT=80"
+Environment="WWW_DIR=/var/www"
+ExecStart=/usr/local/bin/deno run --allow-env --allow-read --allow-net /home/domainserver/domain-server/main.ts
 Restart=on-failure
 
 [Install]
