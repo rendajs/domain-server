@@ -1,0 +1,12 @@
+[Unit]
+Description=Renda domain server
+After=network.target
+
+[Service]
+Type=simple
+User=domainserver
+ExecStart=/usr/local/bin/deno run /home/domainserver/domain-server/main.ts
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
