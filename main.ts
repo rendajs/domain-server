@@ -8,7 +8,7 @@ const studioDir = resolve(wwwDir, "studio");
 const certFile = Deno.env.get("TLS_CERT_FILE");
 const keyFile = Deno.env.get("TLS_KEY_FILE");
 
-const handler : Handler = (req) => {
+const handler: Handler = (req) => {
 	let url = new URL(req.url);
 
 	// For local development, we'll modify the request so that you can access
@@ -55,9 +55,10 @@ const handler : Handler = (req) => {
 
 if (certFile && keyFile) {
 	serveTls(handler, {
-		certFile, keyFile,
+		certFile,
+		keyFile,
 		port,
 	});
 } else {
-	serve(handler, {port});
+	serve(handler, { port });
 }
