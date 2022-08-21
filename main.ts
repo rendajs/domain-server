@@ -44,7 +44,6 @@ serve((req) => {
 			throw new Error("Invalid hostname");
 		}
 		const fsRoot = resolve(studioDir, dir);
-		console.log(fsRoot);
 		return serveDir(req, {
 			fsRoot,
 		});
