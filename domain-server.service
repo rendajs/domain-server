@@ -5,8 +5,10 @@ After=network.target
 [Service]
 Type=simple
 User=domainserver
-Environment="PORT=80"
+Environment="PORT=443"
 Environment="WWW_DIR=/var/www"
+Environment="TLS_CERT_FILE=/home/domainserver/cf-origin.crt"
+Environment="TLS_KEY_FILE=/home/domainserver/cf-origin.key"
 ExecStart=/usr/local/bin/deno run --allow-env --allow-read --allow-net /home/domainserver/domain-server/main.ts
 Restart=on-failure
 

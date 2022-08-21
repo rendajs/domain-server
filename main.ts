@@ -1,12 +1,14 @@
-import { serve } from "https://deno.land/std@0.152.0/http/server.ts";
+import { Handler, serve, serveTls } from "https://deno.land/std@0.152.0/http/server.ts";
 import { serveDir } from "https://deno.land/std@0.152.0/http/file_server.ts";
 import { resolve } from "https://deno.land/std@0.152.0/path/mod.ts";
 
 const port = parseInt(Deno.env.get("PORT") || "0", 10);
 const wwwDir = Deno.env.get("WWW_DIR") || "./www";
 const studioDir = resolve(wwwDir, "studio");
+const certFile = Deno.env.get("TLS_CERT_FILE");
+const keyFile = Deno.env.get("TLS_KEY_FILE");
 
-serve((req) => {
+const handler : Handler = (req) => {
 	let url = new URL(req.url);
 
 	// For local development, we'll modify the request so that you can access
@@ -49,6 +51,13 @@ serve((req) => {
 		});
 	}
 	return new Response(url.hostname);
-}, {
-	port,
-});
+};
+
+if (certFile && keyFile) {
+	serveTls(handler, {
+		certFile, keyFile,
+		port,
+	});
+} else {
+	serve(handler, {port});
+}
