@@ -8,7 +8,7 @@ import { resolve } from "https://deno.land/std@0.152.0/path/mod.ts";
 
 export async function deployHandler(req: Request) {
 	if (req.method != "POST") {
-		return new Response("Not found", {
+		return new Response("Deploy needs to be a POST request.", {
 			status: 404,
 		});
 	}
@@ -23,7 +23,7 @@ export async function deployHandler(req: Request) {
 		expectedToken = canaryDeployToken;
 		deployDirName = "canary";
 	} else {
-		return new Response("Not found", {
+		return new Response("Release channel not found", {
 			status: 404,
 		});
 	}
