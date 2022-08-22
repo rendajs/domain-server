@@ -1,14 +1,33 @@
+#!/usr/bin/env -S deno run --watch --allow-env --allow-read --allow-write --allow-net
+
 import { Handler, serve, serveTls } from "https://deno.land/std@0.152.0/http/server.ts";
 import { serveDir } from "https://deno.land/std@0.152.0/http/file_server.ts";
 import { resolve } from "https://deno.land/std@0.152.0/path/mod.ts";
+import { deployHandler } from "./src/deployHandler.ts";
 
 const port = parseInt(Deno.env.get("PORT") || "0", 10);
 const wwwDir = Deno.env.get("WWW_DIR") || "./www";
-const studioDir = resolve(wwwDir, "studio");
+export const studioDir = resolve(wwwDir, "studio");
 const certFile = Deno.env.get("TLS_CERT_FILE");
 const keyFile = Deno.env.get("TLS_KEY_FILE");
 
-const handler: Handler = (req) => {
+const stableDeployTokenPath = Deno.env.get("STABLE_DEPLOY_TOKEN_PATH") || "./stableDeployToken.txt";
+const canaryDeployTokenPath = Deno.env.get("CANARY_DEPLOY_TOKEN_PATH") || "./canaryDeployToken.txt";
+
+export let stableDeployToken: string | null = null;
+export let canaryDeployToken: string | null = null;
+try {
+	stableDeployToken = await Deno.readTextFile(stableDeployTokenPath);
+} catch {
+	console.warn("Failed to read stable deploy token, deploying to stable is not possible.");
+}
+try {
+	canaryDeployToken = await Deno.readTextFile(canaryDeployTokenPath);
+} catch {
+	console.warn("Failed to read canary deploy token, deploying to canary is not possible.");
+}
+
+const handler: Handler = async (req) => {
 	let url = new URL(req.url);
 
 	// For local development, we'll modify the request so that you can access
@@ -41,6 +60,8 @@ const handler: Handler = (req) => {
 			dir = "stable";
 		} else if (subdomain == "canary") {
 			dir = "canary";
+		} else if (subdomain == "deploy") {
+			return await deployHandler(req);
 		}
 		if (!dir) {
 			throw new Error("Invalid hostname");

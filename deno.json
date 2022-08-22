@@ -1,5 +1,8 @@
 {
 	"fmt": {
+		"files": {
+			"exclude": ["www"]
+		},
 		"options": {
 			"useTabs": true,
 			"lineWidth": 300
