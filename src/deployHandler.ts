@@ -56,7 +56,8 @@ export async function deployHandler(req: Request) {
 	});
 	let success = false;
 	try {
-		const stream = req.body.getReader();
+		const decompressionStream = new DecompressionStream("gzip");
+		const stream = req.body.pipeThrough(decompressionStream).getReader();
 		const untar = new Untar(readerFromStreamReader(stream));
 		for await (const entry of untar) {
 			const fullPath = resolve(tmpDir, entry.fileName);
@@ -72,6 +73,8 @@ export async function deployHandler(req: Request) {
 
 		const deployDir = resolve(studioDir, deployDirName);
 		await ensureDir(deployDir);
+		// Remove deployDir so we don't get errors when overwriting it with tmpDir
+		await Deno.remove(deployDir, {recursive: true});
 		await Deno.rename(tmpDir, deployDir);
 		success = true;
 	} finally {
