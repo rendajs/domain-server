@@ -69,6 +69,7 @@ const handler: Handler = async (req) => {
 		const fsRoot = resolve(studioDir, dir);
 		return serveDir(req, {
 			fsRoot,
+			showDirListing: true,
 		});
 	}
 	return new Response(url.hostname);

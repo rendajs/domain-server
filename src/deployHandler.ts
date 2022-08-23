@@ -74,7 +74,7 @@ export async function deployHandler(req: Request) {
 		const deployDir = resolve(studioDir, deployDirName);
 		await ensureDir(deployDir);
 		// Remove deployDir so we don't get errors when overwriting it with tmpDir
-		await Deno.remove(deployDir, {recursive: true});
+		await Deno.remove(deployDir, { recursive: true });
 		await Deno.rename(tmpDir, deployDir);
 		success = true;
 	} finally {
