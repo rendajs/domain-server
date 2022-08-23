@@ -11,8 +11,8 @@ export const studioDir = resolve(wwwDir, "studio");
 const certFile = Deno.env.get("TLS_CERT_FILE");
 const keyFile = Deno.env.get("TLS_KEY_FILE");
 
-const stableDeployTokenPath = Deno.env.get("STABLE_DEPLOY_HASH_PATH") || "./stableDeployHash.txt";
-const canaryDeployTokenPath = Deno.env.get("CANARY_DEPLOY_HASH_PATH") || "./canaryDeployHash.txt";
+const stableDeployTokenPath = Deno.env.get("STABLE_DEPLOY_HASH_PATH") || "./stable-deploy-hash";
+const canaryDeployTokenPath = Deno.env.get("CANARY_DEPLOY_HASH_PATH") || "./canary-deploy-hash";
 
 export let stableDeployToken: string | null = null;
 export let canaryDeployToken: string | null = null;
