@@ -5,6 +5,7 @@ import { readerFromStreamReader } from "https://deno.land/std@0.151.0/streams/co
 import { ensureDir, ensureFile } from "https://deno.land/std@0.151.0/fs/mod.ts";
 import { copy } from "https://deno.land/std@0.151.0/streams/conversion.ts";
 import { resolve } from "https://deno.land/std@0.152.0/path/mod.ts";
+import { errors, isHttpError } from "https://deno.land/std@0.152.0/http/http_errors.ts";
 
 export async function deployHandler(req: Request) {
 	if (req.method != "POST") {
@@ -55,20 +56,27 @@ export async function deployHandler(req: Request) {
 		prefix: "deploying-",
 	});
 	let success = false;
+	let catchedError;
 	try {
-		const decompressionStream = new DecompressionStream("gzip");
-		const stream = req.body.pipeThrough(decompressionStream).getReader();
-		const untar = new Untar(readerFromStreamReader(stream));
-		for await (const entry of untar) {
-			const fullPath = resolve(tmpDir, entry.fileName);
-			if (entry.type === "directory") {
-				await ensureDir(fullPath);
-				continue;
-			}
+		try {
+			const decompressionStream = new DecompressionStream("gzip");
+			const stream = req.body.pipeThrough(decompressionStream).getReader();
+			const untar = new Untar(readerFromStreamReader(stream));
+			for await (const entry of untar) {
+				const fullPath = resolve(tmpDir, entry.fileName);
+				if (entry.type === "directory") {
+					await ensureDir(fullPath);
+					continue;
+				}
 
-			await ensureFile(fullPath);
-			const file = await Deno.open(fullPath, { write: true });
-			await copy(entry, file);
+				await ensureFile(fullPath);
+				const file = await Deno.open(fullPath, { write: true });
+				await copy(entry, file);
+			}
+		} catch (e) {
+			if (e instanceof TypeError && e.message == "invalid gzip header") {
+				throw new errors.BadRequest("The uploaded data is not gzipped.")
+			}
 		}
 
 		const deployDir = resolve(studioDir, deployDirName);
@@ -77,6 +85,8 @@ export async function deployHandler(req: Request) {
 		await Deno.remove(deployDir, { recursive: true });
 		await Deno.rename(tmpDir, deployDir);
 		success = true;
+	} catch (e) {
+		catchedError = e;
 	} finally {
 		try {
 			await Deno.remove(tmpDir, { recursive: true });
@@ -87,6 +97,9 @@ export async function deployHandler(req: Request) {
 	if (success) {
 		return new Response("ok");
 	} else {
+		if (catchedError && isHttpError(catchedError)) {
+			return new Response(catchedError.message, {status: catchedError.status})
+		}
 		return new Response("Failed to deploy, check the server logs for details", {
 			status: 500,
 		});
