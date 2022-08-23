@@ -9,8 +9,8 @@ Environment="PORT=443"
 Environment="WWW_DIR=/var/www"
 Environment="TLS_CERT_FILE=/home/domainserver/cf-origin.crt"
 Environment="TLS_KEY_FILE=/home/domainserver/cf-origin.key"
-Environment="STABLE_DEPLOY_TOKEN_PATH=/home/domainserver/stable-deploy-token"
-Environment="CANARY_DEPLOY_TOKEN_PATH=/home/domainserver/canary-deploy-token"
+Environment="STABLE_DEPLOY_HASH_PATH=/home/domainserver/stable-deploy-hash"
+Environment="CANARY_DEPLOY_HASH_PATH=/home/domainserver/canary-deploy-hash"
 ExecStart=/usr/local/bin/deno run --allow-env --allow-read --allow-write --allow-net /home/domainserver/domain-server/main.ts
 AmbientCapabilities=CAP_NET_BIND_SERVICE
 Restart=on-failure

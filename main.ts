@@ -11,20 +11,20 @@ export const studioDir = resolve(wwwDir, "studio");
 const certFile = Deno.env.get("TLS_CERT_FILE");
 const keyFile = Deno.env.get("TLS_KEY_FILE");
 
-const stableDeployTokenPath = Deno.env.get("STABLE_DEPLOY_TOKEN_PATH") || "./stableDeployToken.txt";
-const canaryDeployTokenPath = Deno.env.get("CANARY_DEPLOY_TOKEN_PATH") || "./canaryDeployToken.txt";
+const stableDeployTokenPath = Deno.env.get("STABLE_DEPLOY_HASH_PATH") || "./stableDeployHash.txt";
+const canaryDeployTokenPath = Deno.env.get("CANARY_DEPLOY_HASH_PATH") || "./canaryDeployHash.txt";
 
 export let stableDeployToken: string | null = null;
 export let canaryDeployToken: string | null = null;
 try {
 	stableDeployToken = await Deno.readTextFile(stableDeployTokenPath);
 } catch {
-	console.warn("Failed to read stable deploy token, deploying to stable is not possible.");
+	console.warn(`Failed to read stable deploy hash at "${stableDeployTokenPath}", deploying to stable is not possible.`);
 }
 try {
 	canaryDeployToken = await Deno.readTextFile(canaryDeployTokenPath);
 } catch {
-	console.warn("Failed to read canary deploy token, deploying to canary is not possible.");
+	console.warn(`Failed to read canary deploy hash at "${canaryDeployTokenPath}", deploying to canary is not possible.`);
 }
 
 const handler: Handler = async (req) => {
