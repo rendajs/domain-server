@@ -1,3 +1,4 @@
 www
-canary-deploy-hash
 stable-deploy-hash
+canary-deploy-hash
+pr-deploy-hash

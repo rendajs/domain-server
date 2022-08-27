@@ -1,4 +1,4 @@
-import { canaryDeployToken, stableDeployToken, studioDir } from "../main.ts";
+import { canaryDeployToken, prDeployToken, stableDeployToken, studioDir } from "../main.ts";
 import { digestString } from "./digestString.ts";
 import { Untar } from "https://deno.land/std@0.152.0/archive/tar.ts";
 import { readerFromStreamReader } from "https://deno.land/std@0.151.0/streams/conversion.ts";
@@ -23,6 +23,13 @@ export async function deployHandler(req: Request) {
 	} else if (path == "/canary") {
 		expectedToken = canaryDeployToken;
 		deployDirName = "canary";
+	} else if (path == "/pr") {
+		expectedToken = prDeployToken;
+		const prId = parseInt(url.searchParams.get("id") || "", 10);
+		if (isNaN(prId) || prId <= 0) {
+			throw new errors.BadRequest("Invalid PR id.");
+		}
+		deployDirName = "pr/" + prId;
 	} else {
 		return new Response("Release channel not found", {
 			status: 404,
@@ -75,7 +82,7 @@ export async function deployHandler(req: Request) {
 			}
 		} catch (e) {
 			if (e instanceof TypeError && e.message == "invalid gzip header") {
-				throw new errors.BadRequest("The uploaded data is not gzipped.")
+				throw new errors.BadRequest("The uploaded data is not gzipped.");
 			}
 		}
 
@@ -98,7 +105,7 @@ export async function deployHandler(req: Request) {
 		return new Response("ok");
 	} else {
 		if (catchedError && isHttpError(catchedError)) {
-			return new Response(catchedError.message, {status: catchedError.status})
+			throw catchedError;
 		}
 		return new Response("Failed to deploy, check the server logs for details", {
 			status: 500,
