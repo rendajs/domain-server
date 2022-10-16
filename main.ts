@@ -73,6 +73,9 @@ const handler: Handler = async (req) => {
 					throw new errors.BadRequest("Invalid PR id");
 				}
 				dir = "pr/" + prId;
+			} else if (subdomain.startsWith("commit-")) {
+				const commitHash = subdomain.slice("commit-".length);
+				dir = "commits/" + commitHash;
 			}
 			if (!dir) {
 				throw new Error("Invalid hostname");

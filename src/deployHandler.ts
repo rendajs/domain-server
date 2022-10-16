@@ -2,8 +2,8 @@ import { canaryDeployToken, prDeployToken, stableDeployToken, studioDir } from "
 import { digestString } from "./digestString.ts";
 import { Untar } from "https://deno.land/std@0.152.0/archive/tar.ts";
 import { readerFromStreamReader } from "https://deno.land/std@0.151.0/streams/conversion.ts";
-import { ensureDir, ensureFile } from "https://deno.land/std@0.151.0/fs/mod.ts";
-import { copy } from "https://deno.land/std@0.151.0/streams/conversion.ts";
+import { copy, ensureDir, ensureFile } from "https://deno.land/std@0.151.0/fs/mod.ts";
+import { copy as copyStream } from "https://deno.land/std@0.151.0/streams/conversion.ts";
 import { resolve } from "https://deno.land/std@0.152.0/path/mod.ts";
 import { errors, isHttpError } from "https://deno.land/std@0.152.0/http/http_errors.ts";
 
@@ -16,20 +16,24 @@ export async function deployHandler(req: Request) {
 	const url = new URL(req.url);
 	const path = url.pathname;
 	let expectedToken = null;
-	let deployDirName = null;
+	let deployDirs: string[] = [];
 	if (path == "/stable") {
 		expectedToken = stableDeployToken;
-		deployDirName = "stable";
+		deployDirs = ["stable"];
 	} else if (path == "/canary") {
 		expectedToken = canaryDeployToken;
-		deployDirName = "canary";
+		deployDirs = ["canary"];
+		const commitHash = req.headers.get("X-Commit-Hash");
+		if (commitHash) {
+			deployDirs.push("commits/" + commitHash);
+		}
 	} else if (path == "/pr") {
 		expectedToken = prDeployToken;
 		const prId = parseInt(url.searchParams.get("id") || "", 10);
 		if (isNaN(prId) || prId <= 0) {
 			throw new errors.BadRequest("Invalid PR id.");
 		}
-		deployDirName = "pr/" + prId;
+		deployDirs = ["pr/" + prId];
 	} else {
 		return new Response("Release channel not found", {
 			status: 404,
@@ -78,7 +82,7 @@ export async function deployHandler(req: Request) {
 
 				await ensureFile(fullPath);
 				const file = await Deno.open(fullPath, { write: true });
-				await copy(entry, file);
+				await copyStream(entry, file);
 			}
 		} catch (e) {
 			if (e instanceof TypeError && e.message == "invalid gzip header") {
@@ -86,11 +90,13 @@ export async function deployHandler(req: Request) {
 			}
 		}
 
-		const deployDir = resolve(studioDir, deployDirName);
-		await ensureDir(deployDir);
-		// Remove deployDir so we don't get errors when overwriting it with tmpDir
-		await Deno.remove(deployDir, { recursive: true });
-		await Deno.rename(tmpDir, deployDir);
+		for (const dir of deployDirs) {
+			const deployDir = resolve(studioDir, dir);
+			await ensureDir(deployDir);
+			await copy(tmpDir, deployDir, {
+				overwrite: true,
+			});
+		}
 		success = true;
 	} catch (e) {
 		catchedError = e;
