@@ -44,7 +44,17 @@ export async function deployHandler(req: Request) {
 			status: 500,
 		});
 	}
-	const token = req.headers.get("DEPLOY_TOKEN");
+	let token;
+	const tokenHeader = req.headers.get("Authorization");
+	if (tokenHeader) {
+		const split = tokenHeader.split(" ");
+		if (split[0] != "DeployToken") {
+			return new Response("Invalid authorization type", {
+				status: 401,
+			});
+		}
+		token = split[1];
+	}
 	if (!token) {
 		return new Response("Missing deploy token", {
 			status: 401,
