@@ -23,7 +23,7 @@ export async function deployHandler(req: Request) {
 	} else if (path == "/canary") {
 		expectedToken = canaryDeployToken;
 		deployDirs = ["canary"];
-		const commitHash = req.headers.get("X-Commit-Hash");
+		const commitHash = url.searchParams.get("commit");
 		if (commitHash) {
 			deployDirs.push("commits/" + commitHash);
 		}
