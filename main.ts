@@ -38,6 +38,32 @@ const handler: Handler = async (req) => {
 		// certain paths without having to spoof your hostname.
 		if (url.hostname == "localhost") {
 			let path = url.pathname;
+			if (path == "/") {
+				const stableUrl = new URL(url);
+				stableUrl.pathname = "/https://renda.studio/";
+				const canaryUrl = new URL(url);
+				canaryUrl.pathname = "/https://canary.renda.studio/";
+				return new Response(
+					`
+<!DOCTYPE html>
+<html>
+	<head></head>
+	<body>
+		<p>To visit (sub)domains you can place them in the path next to ${url}</p>
+		<ul>
+			<li><a href="${stableUrl}">${stableUrl}</a></li>
+			<li><a href="${canaryUrl}">${canaryUrl}</a></li>
+		</ul>
+	</body>
+</html>
+`,
+					{
+						headers: {
+							"Content-Type": "text/html; charset=utf-8",
+						},
+					},
+				);
+			}
 			if (path.startsWith("/")) {
 				path = path.substring(1);
 			}
