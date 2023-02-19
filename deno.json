@@ -8,7 +8,8 @@
 		},
 		"options": {
 			"useTabs": true,
-			"lineWidth": 300
+			"lineWidth": 300,
+			"proseWrap": "preserve"
 		}
 	}
 }
