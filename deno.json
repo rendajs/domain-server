@@ -1,6 +1,10 @@
 {
+	"compilerOptions": {
+		"checkJs": true,
+		"lib": ["dom", "dom.iterable", "dom.asynciterable", "deno.window"]
+	},
 	"tasks": {
-		"dev": "deno run --watch --allow-env --allow-read --allow-write --allow-net=0.0.0.0 main.ts"
+		"dev": "deno run --watch --allow-env --allow-read --allow-write --allow-net=0.0.0.0,api.github.com main.ts"
 	},
 	"fmt": {
 		"files": {
@@ -10,6 +14,11 @@
 			"useTabs": true,
 			"lineWidth": 300,
 			"proseWrap": "preserve"
+		}
+	},
+	"lint": {
+		"rules": {
+			"exclude": ["no-inner-declarations"]
 		}
 	}
 }

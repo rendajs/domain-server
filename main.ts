@@ -5,6 +5,7 @@ import { serveDir } from "https://deno.land/std@0.152.0/http/file_server.ts";
 import { resolve } from "https://deno.land/std@0.152.0/path/mod.ts";
 import { deployHandler } from "./src/deployHandler.ts";
 import { errors, isHttpError } from "https://deno.land/std@0.152.0/http/http_errors.ts";
+import { bisectHandler } from "./src/bisect/bisectHandler.ts";
 
 const port = parseInt(Deno.env.get("PORT") || "0", 10);
 const wwwDir = Deno.env.get("WWW_DIR") || "./www";
@@ -39,10 +40,17 @@ const handler: Handler = async (req) => {
 		if (url.hostname == "localhost") {
 			let path = url.pathname;
 			if (path == "/") {
-				const stableUrl = new URL(url);
-				stableUrl.pathname = "/https://renda.studio/";
-				const canaryUrl = new URL(url);
-				canaryUrl.pathname = "/https://canary.renda.studio/";
+				const domainUrls = [
+					"renda.studio",
+					"canary.renda.studio",
+					"bisect.renda.studio",
+				];
+				const fullUrls = domainUrls.map((domainUrl) => {
+					const fullUrl = new URL(url);
+					fullUrl.pathname = `/https://${domainUrl}/`;
+					return fullUrl;
+				});
+				const listContent = fullUrls.map((url) => `<li><a href="${url}">${url}</a></li>`).join();
 				return new Response(
 					`
 <!DOCTYPE html>
@@ -51,8 +59,7 @@ const handler: Handler = async (req) => {
 	<body>
 		<p>To visit (sub)domains you can place them in the path next to ${url}</p>
 		<ul>
-			<li><a href="${stableUrl}">${stableUrl}</a></li>
-			<li><a href="${canaryUrl}">${canaryUrl}</a></li>
+			${listContent}
 		</ul>
 	</body>
 </html>
@@ -102,8 +109,9 @@ const handler: Handler = async (req) => {
 			} else if (subdomain.startsWith("commit-")) {
 				const commitHash = subdomain.slice("commit-".length);
 				dir = "commits/" + commitHash;
-			}
-			if (!dir) {
+			} else if (subdomain == "bisect") {
+				return await bisectHandler(req);
+			} else {
 				throw new Error("Invalid hostname");
 			}
 			const fsRoot = resolve(studioDir, dir);

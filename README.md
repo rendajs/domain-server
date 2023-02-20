@@ -2,8 +2,9 @@
 
 This repository contains code responsible for hosting the following domains:
 
-- [**renda.studio**](https://renda.studio) - Stable releases of Renda Studio
+- [**renda.studio**](https://renda.studio) - Stable releases of Renda Studio.
   - [**canary.renda.studio**](https://canary.renda.studio) - Bleeding edge releases of Renda Studio, updated with every commit to the main branch.
+  - [**bisect.renda.studio**](https://bisect.renda.studio) - Allows you to bisect canary builds of Renda Studio in order to find the source of regressions.
   - **deploy.renda.studio** - Used for deploying new Renda Studio versions.
   - **pr-`[pull request id]`.renda.studio** - Preview domains for submitted pull requests.
   - **commit-`[commit hash]`.renda.studio** - Hosts past versions of Renda Studio for every commit in the main branch. Used for bisecting or just for viewing older canary versions.

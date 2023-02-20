@@ -121,6 +121,7 @@ export async function deployHandler(req: Request) {
 		return new Response("ok");
 	} else {
 		if (catchedError && isHttpError(catchedError)) {
+			// Will be handled in main.ts
 			throw catchedError;
 		}
 		return new Response("Failed to deploy, check the server logs for details", {

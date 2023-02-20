@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<style>
+			:root {
+				--bg: #1b1b1b;
+				--section-bg: #272727;
+				--text-color: #d5d5d5;
+			}
+			@media(prefers-color-scheme: light){
+				:root {
+					--bg: #ffffff;
+					--section-bg: #f2f2f2;
+					--text-color: #424242;
+				}
+			}
+			html {
+				font-family: ui-sans-serif, system-ui, sans-serif;
+				background: var(--bg);
+				width: 100%;
+				height: 100%;
+				margin: 0;
+				color: var(--text-color);
+			}
+			a {
+				color: #bdbdbd;
+			}
+			a:active {
+				text-decoration: none;
+			}
+			button {
+				width: 120px;
+			}
+
+			form, .commit-section {
+				padding: 10px;
+				border-radius: 5px;
+				background: var(--section-bg);
+			}
+
+			form {
+				width: fit-content;
+				margin: 10px auto;
+			}
+
+			.commit-section {
+				width: 300px;
+				margin: 10px;
+			}
+			.commit-section > h3 {
+				margin: 0;
+				margin-bottom: 5px;
+			}
+
+			#commitStatuses {
+				display: flex;
+				justify-content: center;
+			}
+
+			menu {
+				list-style-type: none;
+				display: flex;
+				justify-content: center;
+				padding: 0;
+				margin-bottom: 0;
+				gap: 1em;
+			}
+		</style>
+		<script src="./bisect.js" type="module"></script>
+	</head>
+	<body>
+		<form id="startBisectForm">
+			<datalist id="commitsList">
+			</datalist>
+			<menu>
+				<li>
+					<label>
+						Good commit<br>
+						<input id="goodInput" list="commitsList" placeholder="Defaults to oldest" />
+					</label>
+				</li>
+				<li>
+					<label>
+						Bad commit<br>
+						<input id="badInput" list="commitsList" placeholder="Defaults to latest" />
+					</label>
+				</li>
+			</menu>
+			<br>
+			<button>Start bisect</button>
+		</form>
+		<div id="commitStatuses"></div>
+		<div id="bisecting" style="display: none;">
+			<form>
+				<div id="range"></div>
+				<label>
+					<span id="stepsLeftLabel"></span><br>
+					<progress id="stepsLeftProgress"></progress>
+				</label>
+				<menu>
+					<li><button onclick="good();" type="button">Good</button></li>
+					<li><button onclick="bad();" type="button">Bad</button></li>
+				</menu>
+			</form>
+		</div>
+		<form id="done" style="display: none;">
+			<span>Done!</span>
+			<menu>
+				<li><button id="copyResultsButton">Copy results</button></li>
+				<li><button onclick="location.reload()" type="button">Start over</button></li>
+			</menu>
+		</div>
+	</body>
+</html>
