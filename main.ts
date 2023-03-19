@@ -1,12 +1,12 @@
 #!/usr/bin/env -S deno run --watch --allow-env --allow-read --allow-write --allow-net
 
 import { Handler, serve, serveTls } from "https://deno.land/std@0.152.0/http/server.ts";
-import { serveDir } from "https://deno.land/std@0.152.0/http/file_server.ts";
 import { resolve } from "https://deno.land/std@0.152.0/path/mod.ts";
 import * as fs from "https://deno.land/std@0.152.0/fs/mod.ts";
 import { deployHandler } from "./src/deployHandler.ts";
 import { errors, isHttpError } from "https://deno.land/std@0.152.0/http/http_errors.ts";
 import { bisectHandler } from "./src/bisect/bisectHandler.ts";
+import { serveStudio } from "./src/serveStudio.ts";
 
 const port = parseInt(Deno.env.get("PORT") || "0", 10);
 const wwwDir = Deno.env.get("WWW_DIR") || "./www";
@@ -105,31 +105,29 @@ const handler: Handler = async (req) => {
 			if (url.hostname.endsWith(".renda.studio")) {
 				subdomain = url.hostname.substring(0, url.hostname.length - ".renda.studio".length);
 			}
-			let fsRoot = null;
+
+			if (subdomain == "deploy") return await deployHandler(req);
+			if (subdomain == "bisect") return await bisectHandler(req);
+
+			let studioDir = null;
 			if (subdomain == "") {
-				fsRoot = stableDir;
+				studioDir = stableDir;
 			} else if (subdomain == "canary") {
-				fsRoot = canaryDir;
-			} else if (subdomain == "deploy") {
-				return await deployHandler(req);
+				studioDir = canaryDir;
 			} else if (subdomain.startsWith("pr-")) {
 				const prId = parseInt(subdomain.slice(3), 10);
 				if (isNaN(prId) || prId <= 0) {
 					throw new errors.BadRequest("Invalid PR id");
 				}
-				fsRoot = resolve(prDir, String(prId));
+				studioDir = resolve(prDir, String(prId));
 			} else if (subdomain.startsWith("commit-")) {
 				const commitHash = subdomain.slice("commit-".length);
-				fsRoot = resolve(commitsDir, commitHash);
-			} else if (subdomain == "bisect") {
-				return await bisectHandler(req);
+				studioDir = resolve(commitsDir, commitHash);
 			} else {
 				throw new Error("Invalid hostname");
 			}
-			return serveDir(req, {
-				fsRoot,
-				showDirListing: true,
-			});
+
+			return await serveStudio(req, studioDir);
 		}
 		return new Response(url.hostname);
 	} catch (e) {
