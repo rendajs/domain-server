@@ -3,6 +3,7 @@
 import { Handler, serve, serveTls } from "https://deno.land/std@0.152.0/http/server.ts";
 import { serveDir } from "https://deno.land/std@0.152.0/http/file_server.ts";
 import { resolve } from "https://deno.land/std@0.152.0/path/mod.ts";
+import * as fs from "https://deno.land/std@0.152.0/fs/mod.ts";
 import { deployHandler } from "./src/deployHandler.ts";
 import { errors, isHttpError } from "https://deno.land/std@0.152.0/http/http_errors.ts";
 import { bisectHandler } from "./src/bisect/bisectHandler.ts";
@@ -10,6 +11,10 @@ import { bisectHandler } from "./src/bisect/bisectHandler.ts";
 const port = parseInt(Deno.env.get("PORT") || "0", 10);
 const wwwDir = Deno.env.get("WWW_DIR") || "./www";
 export const studioDir = resolve(wwwDir, "studio");
+const stableDir = resolve(studioDir, "stable");
+const canaryDir = resolve(studioDir, "canary");
+const prDir = resolve(studioDir, "pr");
+const commitsDir = resolve(studioDir, "commits");
 const certFile = Deno.env.get("TLS_CERT_FILE");
 const keyFile = Deno.env.get("TLS_KEY_FILE");
 
@@ -30,6 +35,13 @@ async function tryGetDeployToken(path: string, environment: string) {
 export const stableDeployToken = await tryGetDeployToken(stableDeployTokenPath, "stable");
 export const canaryDeployToken = await tryGetDeployToken(canaryDeployTokenPath, "canary");
 export const prDeployToken = await tryGetDeployToken(prDeployTokenPath, "pr");
+
+await fs.ensureDir(wwwDir);
+await fs.ensureDir(studioDir);
+await fs.ensureDir(stableDir);
+await fs.ensureDir(canaryDir);
+await fs.ensureDir(prDir);
+await fs.ensureDir(commitsDir);
 
 const handler: Handler = async (req) => {
 	try {
@@ -93,11 +105,11 @@ const handler: Handler = async (req) => {
 			if (url.hostname.endsWith(".renda.studio")) {
 				subdomain = url.hostname.substring(0, url.hostname.length - ".renda.studio".length);
 			}
-			let dir = null;
+			let fsRoot = null;
 			if (subdomain == "") {
-				dir = "stable";
+				fsRoot = stableDir;
 			} else if (subdomain == "canary") {
-				dir = "canary";
+				fsRoot = canaryDir;
 			} else if (subdomain == "deploy") {
 				return await deployHandler(req);
 			} else if (subdomain.startsWith("pr-")) {
@@ -105,16 +117,15 @@ const handler: Handler = async (req) => {
 				if (isNaN(prId) || prId <= 0) {
 					throw new errors.BadRequest("Invalid PR id");
 				}
-				dir = "pr/" + prId;
+				fsRoot = resolve(prDir, String(prId));
 			} else if (subdomain.startsWith("commit-")) {
 				const commitHash = subdomain.slice("commit-".length);
-				dir = "commits/" + commitHash;
+				fsRoot = resolve(commitsDir, commitHash);
 			} else if (subdomain == "bisect") {
 				return await bisectHandler(req);
 			} else {
 				throw new Error("Invalid hostname");
 			}
-			const fsRoot = resolve(studioDir, dir);
 			return serveDir(req, {
 				fsRoot,
 				showDirListing: true,
