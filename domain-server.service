@@ -5,7 +5,8 @@ After=network.target
 [Service]
 Type=simple
 User=domainserver
-Environment="PORT=443"
+Environment="PORT=80"
+Environment="TLS_PORT=443"
 Environment="WWW_DIR=/var/www"
 Environment="GITHUB_ACCESS_TOKEN=***"
 Environment="TLS_CERT_FILE=/home/domainserver/cf-origin.crt"

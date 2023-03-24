@@ -9,6 +9,7 @@ import { bisectHandler } from "./src/bisect/bisectHandler.ts";
 import { serveStudio } from "./src/serveStudio.ts";
 
 const port = parseInt(Deno.env.get("PORT") || "0", 10);
+const tlsPort = parseInt(Deno.env.get("TLS_PORT") || "0", 10);
 const wwwDir = Deno.env.get("WWW_DIR") || "./www";
 export const studioDir = resolve(wwwDir, "studio");
 const stableDir = resolve(studioDir, "stable");
@@ -142,6 +143,15 @@ if (certFile && keyFile) {
 	serveTls(handler, {
 		certFile,
 		keyFile,
+		port: tlsPort,
+	});
+
+	// Redirect http to https
+	serve((req) => {
+		const url = new URL(req.url);
+		url.protocol = "https";
+		return Response.redirect(url.href);
+	}, {
 		port,
 	});
 } else {
