@@ -38,10 +38,12 @@ async function listCommits() {
 		if (mapped.find((commit) => commit.sha == lastCachedSha) || count >= MAX_COMMIT_REQUESTS) done();
 		return mapped;
 	});
+	const newCommits = [];
 	for (const commit of result) {
 		if (commit.sha == lastCachedSha) break;
-		cachedCommitData.push(commit);
+		newCommits.push(commit);
 	}
+	cachedCommitData = [...newCommits, ...cachedCommitData];
 	localStorage.cachedCommitData = JSON.stringify(cachedCommitData);
 
 	const deployedCommitDirs: string[] = [];
