@@ -134,7 +134,7 @@ function updateAll() {
 			el.innerHTML = `
 				<h3>${escapeHtml(message)}</h3>
 				<div>${escapeHtml(type)}</div>
-				<small><a href="${escapeHtml(getCommitUrl(sha))}">${escapeHtml(shortSha)}</a></small>
+				<small><a href="${escapeHtml(getCommitUrl(sha))}" target="_blank">${escapeHtml(shortSha)}</a></small>
 			`;
 
 			commitStatusesEl.appendChild(el);
