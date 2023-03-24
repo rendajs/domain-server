@@ -66,11 +66,13 @@ let goodIndex = -1;
 let currentIndex = -1;
 let badIndex = -1;
 
+let isBisecting = false;
 function startBisect() {
 	startFormEl.style.display = "none";
 	bisectingEl.style.display = "";
 	const { estimatedSteps } = computeStepsLeft();
 	stepsLeftProgressEl.max = estimatedSteps;
+	isBisecting = true;
 	updateAll();
 }
 
@@ -82,6 +84,13 @@ globalThis.bad = function () {
 	badIndex = currentIndex;
 	updateAll();
 };
+
+document.addEventListener("keydown", (e) => {
+	if (isBisecting) {
+		if (e.code == "KeyG") good();
+		if (e.code == "KeyB") bad();
+	}
+});
 
 function computeStepsLeft() {
 	const rangeSize = Math.abs(goodIndex - badIndex);
@@ -159,6 +168,7 @@ function updateAll() {
 	if (estimatedSteps == 0) {
 		bisectingEl.style.display = "none";
 		doneEl.style.display = "";
+		isBisecting = false;
 	}
 }
 
