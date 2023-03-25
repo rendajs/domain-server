@@ -7,6 +7,7 @@ import { deployHandler } from "./src/deployHandler.ts";
 import { errors, isHttpError } from "https://deno.land/std@0.152.0/http/http_errors.ts";
 import { bisectHandler } from "./src/bisect/bisectHandler.ts";
 import { serveStudio } from "./src/serveStudio.ts";
+import { Application as StudioDiscovery } from "https://raw.githubusercontent.com/rendajs/studio-discovery-server/52fac72d9218402e491a63f69670b349529df39e/src/main.js";
 
 const port = parseInt(Deno.env.get("PORT") || "0", 10);
 const tlsPort = parseInt(Deno.env.get("TLS_PORT") || "0", 10);
@@ -44,7 +45,9 @@ await fs.ensureDir(canaryDir);
 await fs.ensureDir(prDir);
 await fs.ensureDir(commitsDir);
 
-const handler: Handler = async (req) => {
+const studioDiscovery = new StudioDiscovery();
+
+const handler: Handler = async (req, connInfo) => {
 	try {
 		let url = new URL(req.url);
 
@@ -57,6 +60,7 @@ const handler: Handler = async (req) => {
 					"renda.studio",
 					"canary.renda.studio",
 					"bisect.renda.studio",
+					"discovery.renda.studio",
 				];
 				const fullUrls = domainUrls.map((domainUrl) => {
 					const fullUrl = new URL(url);
@@ -109,6 +113,7 @@ const handler: Handler = async (req) => {
 
 			if (subdomain == "deploy") return await deployHandler(req);
 			if (subdomain == "bisect") return await bisectHandler(req);
+			if (subdomain == "discovery") return studioDiscovery.webSocketManager.handleRequest(req, connInfo);
 
 			let studioDir = null;
 			if (subdomain == "") {
