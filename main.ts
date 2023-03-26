@@ -7,7 +7,7 @@ import { deployHandler } from "./src/deployHandler.ts";
 import { errors, isHttpError } from "https://deno.land/std@0.152.0/http/http_errors.ts";
 import { bisectHandler } from "./src/bisect/bisectHandler.ts";
 import { serveStudio } from "./src/serveStudio.ts";
-import { Application as StudioDiscovery } from "https://raw.githubusercontent.com/rendajs/studio-discovery-server/9839f2a84673dc4c2680bc4268b23b8dd6777ad1/src/main.js";
+import { Application as StudioDiscovery } from "https://raw.githubusercontent.com/rendajs/studio-discovery-server/ef3c6ce89a589e391a64fdbeb4c6dc15de69dc9b/src/main.js";
 
 const port = parseInt(Deno.env.get("PORT") || "0", 10);
 const tlsPort = parseInt(Deno.env.get("TLS_PORT") || "0", 10);
