@@ -7,6 +7,7 @@ Type=simple
 User=root
 Environment="PORT=80"
 Environment="TLS_PORT=443"
+Environment="RENDAJS_ORG_PROXY_PORT=8001"
 Environment="WWW_DIR=/var/www"
 Environment="GITHUB_ACCESS_TOKEN=***"
 Environment="TLS_CERT_FILE=/home/domainserver/certs/fullchain.pem"

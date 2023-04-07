@@ -8,6 +8,7 @@ import { errors, isHttpError } from "https://deno.land/std@0.152.0/http/http_err
 import { bisectHandler } from "./src/bisect/bisectHandler.ts";
 import { serveStudio } from "./src/serveStudio.ts";
 import { Application as StudioDiscovery } from "https://raw.githubusercontent.com/rendajs/studio-discovery-server/ef3c6ce89a589e391a64fdbeb4c6dc15de69dc9b/src/main.js";
+import { serveRendaJsOrg } from "./src/serveRendaJsOrg.ts";
 
 const port = parseInt(Deno.env.get("PORT") || "0", 10);
 const tlsPort = parseInt(Deno.env.get("TLS_PORT") || "0", 10);
@@ -53,7 +54,8 @@ const handler: Handler = async (req, connInfo) => {
 
 		// For local development, we'll modify the request so that you can access
 		// certain paths without having to spoof your hostname.
-		if (url.hostname == "localhost") {
+		const isLocalRequest = url.hostname == "localhost";
+		if (isLocalRequest) {
 			let path = url.pathname;
 			if (path == "/") {
 				const domainUrls = [
@@ -61,6 +63,7 @@ const handler: Handler = async (req, connInfo) => {
 					"canary.renda.studio",
 					"bisect.renda.studio",
 					"discovery.renda.studio",
+					"rendajs.org",
 				];
 				const fullUrls = domainUrls.map((domainUrl) => {
 					const fullUrl = new URL(url);
@@ -134,8 +137,10 @@ const handler: Handler = async (req, connInfo) => {
 			}
 
 			return await serveStudio(req, studioDir);
+		} else if (url.hostname == "rendajs.org") {
+			return await serveRendaJsOrg(req, isLocalRequest);
 		}
-		return new Response(url.hostname);
+		throw new errors.NotFound();
 	} catch (e) {
 		if (isHttpError(e)) {
 			return new Response(e.message, { status: e.status });
