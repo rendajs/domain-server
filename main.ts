@@ -67,7 +67,7 @@ const handler: Handler = async (req, connInfo) => {
 					fullUrl.pathname = `/https://${domainUrl}/`;
 					return fullUrl;
 				});
-				const listContent = fullUrls.map((url) => `<li><a href="${url}">${url}</a></li>`).join();
+				const listContent = fullUrls.map((url) => `<li><a href="${url}">${url}</a></li>`).join("");
 				return new Response(
 					`
 <!DOCTYPE html>
