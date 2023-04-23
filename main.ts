@@ -9,6 +9,7 @@ import { bisectHandler } from "./src/bisect/bisectHandler.ts";
 import { serveStudio } from "./src/serveStudio.ts";
 import { Application as StudioDiscovery } from "https://raw.githubusercontent.com/rendajs/studio-discovery-server/ef3c6ce89a589e391a64fdbeb4c6dc15de69dc9b/src/main.js";
 import { serveRendaJsOrg } from "./src/serveRendaJsOrg.ts";
+import { Status } from "https://deno.land/std@0.152.0/http/http_status.ts";
 
 const port = parseInt(Deno.env.get("PORT") || "0", 10);
 const tlsPort = parseInt(Deno.env.get("TLS_PORT") || "0", 10);
@@ -160,7 +161,7 @@ if (certFile && keyFile) {
 	serve((req) => {
 		const url = new URL(req.url);
 		url.protocol = "https";
-		return Response.redirect(url.href);
+		return Response.redirect(url.href, Status.MovedPermanently);
 	}, {
 		port,
 	});
