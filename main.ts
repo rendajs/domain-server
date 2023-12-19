@@ -7,7 +7,7 @@ import { deployHandler } from "./src/deployHandler.ts";
 import { errors, isHttpError } from "https://deno.land/std@0.152.0/http/http_errors.ts";
 import { bisectHandler } from "./src/bisect/bisectHandler.ts";
 import { serveStudio } from "./src/serveStudio.ts";
-import { Application as StudioDiscovery } from "https://raw.githubusercontent.com/rendajs/studio-discovery-server/ef3c6ce89a589e391a64fdbeb4c6dc15de69dc9b/src/main.js";
+import { Application as StudioDiscovery } from "https://raw.githubusercontent.com/rendajs/studio-discovery-server/e303652743ea29ddcbfdec7b7272331351d35f5e/src/main.js";
 import { serveRendaJsOrg } from "./src/serveRendaJsOrg.ts";
 import { Status } from "https://deno.land/std@0.152.0/http/http_status.ts";
 
