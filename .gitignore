@@ -3,3 +3,4 @@ stable-deploy-hash
 canary-deploy-hash
 pr-deploy-hash
 deno.lock
+.env

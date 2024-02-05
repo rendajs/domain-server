@@ -6,6 +6,7 @@ import { copy, ensureDir, ensureFile } from "https://deno.land/std@0.151.0/fs/mo
 import { copy as copyStream } from "https://deno.land/std@0.151.0/streams/conversion.ts";
 import { resolve } from "https://deno.land/std@0.152.0/path/mod.ts";
 import { errors, isHttpError } from "https://deno.land/std@0.152.0/http/http_errors.ts";
+import { purgeUrl } from "./cloudflare.ts";
 
 export async function deployHandler(req: Request) {
 	if (req.method != "POST") {
@@ -16,13 +17,16 @@ export async function deployHandler(req: Request) {
 	const url = new URL(req.url);
 	const path = url.pathname;
 	let expectedToken = null;
+	let purgeDomain = null;
 	let deployDirs: string[] = [];
 	if (path == "/stable") {
 		expectedToken = stableDeployToken;
 		deployDirs = ["stable"];
+		purgeDomain = "renda.studio";
 	} else if (path == "/canary") {
 		expectedToken = canaryDeployToken;
 		deployDirs = ["canary"];
+		purgeDomain = "canary.renda.studio";
 		const commitHash = url.searchParams.get("commit");
 		if (commitHash) {
 			deployDirs.push("commits/" + commitHash);
@@ -34,6 +38,7 @@ export async function deployHandler(req: Request) {
 			throw new errors.BadRequest("Invalid PR id.");
 		}
 		deployDirs = ["pr/" + prId];
+		purgeDomain = `pr-${prId}.renda.studio`;
 	} else {
 		return new Response("Release channel not found", {
 			status: 404,
@@ -106,6 +111,9 @@ export async function deployHandler(req: Request) {
 			await copy(tmpDir, deployDir, {
 				overwrite: true,
 			});
+		}
+		if (purgeDomain) {
+			await purgeUrl(`https://${purgeDomain}/sw.js`);
 		}
 		success = true;
 	} catch (e) {

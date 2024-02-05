@@ -4,7 +4,7 @@
 		"lib": ["dom", "dom.iterable", "dom.asynciterable", "deno.window"]
 	},
 	"tasks": {
-		"dev": "deno run --watch --allow-env --allow-read --allow-write --allow-net=0.0.0.0,api.github.com main.ts"
+		"dev": "deno run --watch --allow-env --allow-read --allow-write --allow-net=0.0.0.0,api.github.com,api.cloudflare.com main.ts"
 	},
 	"fmt": {
 		"files": {

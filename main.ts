@@ -1,5 +1,6 @@
 #!/usr/bin/env -S deno run --watch --allow-env --allow-read --allow-write --allow-net
 
+import "https://deno.land/std@0.214.0/dotenv/load.ts";
 import { Handler, serve, serveTls } from "https://deno.land/std@0.152.0/http/server.ts";
 import { resolve } from "https://deno.land/std@0.152.0/path/mod.ts";
 import * as fs from "https://deno.land/std@0.152.0/fs/mod.ts";
