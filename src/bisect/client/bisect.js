@@ -157,7 +157,7 @@ function updateAll() {
 	}
 
 	if (estimatedSteps > 0) {
-		window.open(getCommitUrl(current.sha));
+		globalThis.open(getCommitUrl(current.sha));
 	}
 
 	const stepsStr = estimatedSteps > 1 ? "steps" : "step";
