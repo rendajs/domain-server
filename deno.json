@@ -6,15 +6,11 @@
 	"tasks": {
 		"dev": "deno run --watch --allow-env --allow-read --allow-write --allow-net=0.0.0.0,api.github.com,api.cloudflare.com main.ts"
 	},
+	"exclude": ["www"],
 	"fmt": {
-		"files": {
-			"exclude": ["www"]
-		},
-		"options": {
-			"useTabs": true,
-			"lineWidth": 300,
-			"proseWrap": "preserve"
-		}
+		"useTabs": true,
+		"lineWidth": 300,
+		"proseWrap": "preserve"
 	},
 	"lint": {
 		"rules": {
