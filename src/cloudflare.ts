@@ -21,28 +21,24 @@ export async function purgeUrl(url: string) {
 		throw new Error("Cloudflare timed out while purging cache.");
 	})();
 
-	try {
-		const resultPromise = (async () => {
-			const response = await fetch(`https://api.cloudflare.com/client/v4/zones/${zoneIdentifier}/purge_cache`, {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					Authorization: `Bearer ${token}`,
-				},
-				body: JSON.stringify({
-					files: [url],
-				}),
-			});
-			if (!response.ok) {
-				throw new Error(`Non ok status code returned: ${response.status}`);
-			}
-			const result = await response.json();
-			if (!result.success) {
-				throw new Error("Cloudflare responded with an error", result.errors);
-			}
-		})();
-		await Promise.race([resultPromise, timeoutPromise]);
-	} catch (e) {
-		console.error("Purging cloudflare cache failed with the following error", e);
-	}
+	const resultPromise = (async () => {
+		const response = await fetch(`https://api.cloudflare.com/client/v4/zones/${zoneIdentifier}/purge_cache`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				Authorization: `Bearer ${token}`,
+			},
+			body: JSON.stringify({
+				files: [url],
+			}),
+		});
+		if (!response.ok) {
+			throw new Error(`Non ok status code returned: ${response.status}`);
+		}
+		const result = await response.json();
+		if (!result.success) {
+			throw new Error("Cloudflare responded with an error", result.errors);
+		}
+	})();
+	await Promise.race([resultPromise, timeoutPromise]);
 }

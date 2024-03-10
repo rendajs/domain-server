@@ -5,6 +5,7 @@ This repository contains code responsible for hosting the following domains:
 - [**rendajs.org**](https://rendajs.org) - Main landing page of the Renda project.
 - [**renda.studio**](https://renda.studio) - Stable releases of Renda Studio.
   - [**canary.renda.studio**](https://canary.renda.studio) - Bleeding edge releases of Renda Studio, updated with every commit to the main branch.
+  - [**staging.renda.studio**](https://staging.renda.studio) - New releases are deployed here for some final checks before deploying to production.
   - [**bisect.renda.studio**](https://bisect.renda.studio) - Allows you to bisect canary builds of Renda Studio in order to find the source of regressions.
   - **deploy.renda.studio** - Used for deploying new Renda Studio versions.
   - **pr-`[pull request id]`.renda.studio** - Preview domains for submitted pull requests.

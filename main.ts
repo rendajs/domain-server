@@ -16,7 +16,8 @@ const port = parseInt(Deno.env.get("PORT") || "0", 10);
 const tlsPort = parseInt(Deno.env.get("TLS_PORT") || "0", 10);
 const wwwDir = Deno.env.get("WWW_DIR") || "./www";
 export const studioDir = resolve(wwwDir, "studio");
-const stableDir = resolve(studioDir, "stable");
+const productionDir = resolve(studioDir, "production");
+const stagingDir = resolve(studioDir, "staging");
 const canaryDir = resolve(studioDir, "canary");
 const prDir = resolve(studioDir, "pr");
 const commitsDir = resolve(studioDir, "commits");
@@ -31,16 +32,18 @@ function tryGetDeployToken(envKey: string, environment: string) {
 	return token;
 }
 
-export const prDeployToken = tryGetDeployToken("PR_DEPLOY_HASH", "pr");
+export const productionDeployToken = tryGetDeployToken("PRODUCTION_DEPLOY_HASH", "production");
+export const stagingDeployToken = tryGetDeployToken("STAGING_DEPLOY_HASH", "staging");
 export const canaryDeployToken = tryGetDeployToken("CANARY_DEPLOY_HASH", "canary");
-export const stableDeployToken = tryGetDeployToken("STABLE_DEPLOY_HASH", "stable");
+export const prDeployToken = tryGetDeployToken("PR_DEPLOY_HASH", "pr");
 
 await fs.ensureDir(wwwDir);
 await fs.ensureDir(studioDir);
-await fs.ensureDir(stableDir);
+await fs.ensureDir(productionDir);
+await fs.ensureDir(stagingDir);
 await fs.ensureDir(canaryDir);
-await fs.ensureDir(prDir);
 await fs.ensureDir(commitsDir);
+await fs.ensureDir(prDir);
 
 const studioDiscovery = new StudioDiscovery();
 
@@ -56,7 +59,9 @@ const handler: Handler = async (req, connInfo) => {
 			if (path == "/") {
 				const domainUrls = [
 					"renda.studio",
+					"staging.renda.studio",
 					"canary.renda.studio",
+					"deploy.renda.studio",
 					"bisect.renda.studio",
 					"discovery.renda.studio",
 					"rendajs.org",
@@ -116,18 +121,20 @@ const handler: Handler = async (req, connInfo) => {
 
 			let studioDir = null;
 			if (subdomain == "") {
-				studioDir = stableDir;
+				studioDir = productionDir;
+			} else if (subdomain == "staging") {
+				studioDir = stagingDir;
 			} else if (subdomain == "canary") {
 				studioDir = canaryDir;
+			} else if (subdomain.startsWith("commit-")) {
+				const commitHash = subdomain.slice("commit-".length);
+				studioDir = resolve(commitsDir, commitHash);
 			} else if (subdomain.startsWith("pr-")) {
 				const prId = parseInt(subdomain.slice(3), 10);
 				if (isNaN(prId) || prId <= 0) {
 					throw new errors.BadRequest("Invalid PR id");
 				}
 				studioDir = resolve(prDir, String(prId));
-			} else if (subdomain.startsWith("commit-")) {
-				const commitHash = subdomain.slice("commit-".length);
-				studioDir = resolve(commitsDir, commitHash);
 			} else {
 				throw new Error("Invalid hostname");
 			}

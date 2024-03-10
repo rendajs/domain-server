@@ -1,4 +1,4 @@
-import { canaryDeployToken, prDeployToken, stableDeployToken, studioDir } from "../main.ts";
+import { canaryDeployToken, prDeployToken, productionDeployToken, stagingDeployToken, studioDir } from "../main.ts";
 import { digestString } from "./digestString.ts";
 import { Untar } from "https://deno.land/std@0.152.0/archive/tar.ts";
 import { readerFromStreamReader } from "https://deno.land/std@0.151.0/streams/conversion.ts";
@@ -16,41 +16,55 @@ export async function deployHandler(req: Request) {
 	}
 	const url = new URL(req.url);
 	const path = url.pathname;
-	let expectedToken = null;
-	let purgeDomain = null;
-	let deployDirs: string[] = [];
-	if (path == "/stable") {
-		expectedToken = stableDeployToken;
-		deployDirs = ["stable"];
-		purgeDomain = "renda.studio";
+	if (path == "/production") {
+		await validateDeployToken(req, productionDeployToken);
+		await copyDeployDir(resolve(studioDir, "staging"), "production");
+		await tryPurgeDomain("renda.studio");
+		return new Response("ok");
+	} else if (path == "/staging") {
+		await validateDeployToken(req, stagingDeployToken);
+		await deployArchive(req, ["staging"]);
+		await tryPurgeDomain("staging.renda.studio");
+		return new Response("ok");
 	} else if (path == "/canary") {
-		expectedToken = canaryDeployToken;
-		deployDirs = ["canary"];
-		purgeDomain = "canary.renda.studio";
+		await validateDeployToken(req, canaryDeployToken);
+
+		const deployDirs = ["canary"];
 		const commitHash = url.searchParams.get("commit");
 		if (commitHash) {
 			deployDirs.push("commits/" + commitHash);
 		}
+		await deployArchive(req, deployDirs);
+
+		await tryPurgeDomain("canary.renda.studio");
+		return new Response("ok");
 	} else if (path == "/pr") {
-		expectedToken = prDeployToken;
+		await validateDeployToken(req, prDeployToken);
+
 		const prId = parseInt(url.searchParams.get("id") || "", 10);
 		if (isNaN(prId) || prId <= 0) {
 			throw new errors.BadRequest("Invalid PR id.");
 		}
-		deployDirs = ["pr/" + prId];
-		purgeDomain = `pr-${prId}.renda.studio`;
+		await deployArchive(req, ["pr/" + prId]);
+
+		await tryPurgeDomain(`pr-${prId}.renda.studio`);
+		return new Response("ok");
 	} else {
-		return new Response("Release channel not found", {
-			status: 404,
-		});
+		throw new errors.NotFound("Release channel not found");
 	}
+}
+
+/**
+ * Asserts that the request contains a valid deploy token and throws a http error if not.
+ */
+async function validateDeployToken(request: Request, expectedToken: string | null) {
 	if (!expectedToken || !expectedToken.trim()) {
 		return new Response("No deploy token set on the server.", {
 			status: 500,
 		});
 	}
 	let token;
-	const tokenHeader = req.headers.get("Authorization");
+	const tokenHeader = request.headers.get("Authorization");
 	if (tokenHeader) {
 		const split = tokenHeader.split(" ");
 		if (split[0] != "DeployToken") {
@@ -71,22 +85,28 @@ export async function deployHandler(req: Request) {
 			status: 401,
 		});
 	}
+}
 
-	if (!req.body) {
-		return new Response("Missing file", {
+/**
+ * Decompresses the body and writes the contents to a temporary directory.
+ * Once this is done, the contents are copied to `deployDirs`.
+ * Throws a http error when something goes wrong.
+ */
+async function deployArchive(request: Request, deployDirs: string[]) {
+	const tmpDir = await Deno.makeTempDir({
+		prefix: "deploying-",
+	});
+
+	if (!request.body) {
+		return new Response("Request body is empty", {
 			status: 400,
 		});
 	}
 
-	const tmpDir = await Deno.makeTempDir({
-		prefix: "deploying-",
-	});
-	let success = false;
-	let catchedError;
 	try {
 		try {
 			const decompressionStream = new DecompressionStream("gzip");
-			const stream = req.body.pipeThrough(decompressionStream).getReader();
+			const stream = request.body.pipeThrough(decompressionStream).getReader();
 			const untar = new Untar(readerFromStreamReader(stream));
 			for await (const entry of untar) {
 				const fullPath = resolve(tmpDir, entry.fileName);
@@ -103,21 +123,19 @@ export async function deployHandler(req: Request) {
 			if (e instanceof TypeError && e.message == "invalid gzip header") {
 				throw new errors.BadRequest("The uploaded data is not gzipped.");
 			}
+			throw new errors.InternalServerError("Failed to decompress archive.");
 		}
 
-		for (const dir of deployDirs) {
-			const deployDir = resolve(studioDir, dir);
-			await ensureDir(deployDir);
-			await copy(tmpDir, deployDir, {
-				overwrite: true,
-			});
+		for (const deployDir of deployDirs) {
+			await copyDeployDir(tmpDir, deployDir);
 		}
-		if (purgeDomain) {
-			await purgeUrl(`https://${purgeDomain}/sw.js`);
-		}
-		success = true;
 	} catch (e) {
-		catchedError = e;
+		if (e && isHttpError(e)) {
+			// Will be handled in main.ts
+			throw e;
+		}
+		console.error(e);
+		throw new errors.InternalServerError("Failed to deploy, check the server logs for details.");
 	} finally {
 		try {
 			await Deno.remove(tmpDir, { recursive: true });
@@ -125,15 +143,25 @@ export async function deployHandler(req: Request) {
 			// Already removed.
 		}
 	}
-	if (success) {
-		return new Response("ok");
-	} else {
-		if (catchedError && isHttpError(catchedError)) {
-			// Will be handled in main.ts
-			throw catchedError;
-		}
-		return new Response("Failed to deploy, check the server logs for details", {
-			status: 500,
-		});
+}
+
+async function copyDeployDir(sourceDir: string, deployDir: string) {
+	const resolvedDestination = resolve(studioDir, deployDir);
+	await ensureDir(resolvedDestination);
+	await copy(sourceDir, resolvedDestination, {
+		overwrite: true,
+	});
+}
+
+/**
+ * Attempts to purge the service worker file from Cloudflare.
+ * Throws a http error when this fails.
+ */
+async function tryPurgeDomain(domain: string) {
+	try {
+		await purgeUrl(`https://${domain}/sw.js`);
+	} catch (e) {
+		console.error(e);
+		throw new errors.InternalServerError("Failed to purge Cloudflare cache. check the server logs for details.");
 	}
 }
