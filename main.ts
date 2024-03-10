@@ -23,23 +23,17 @@ const commitsDir = resolve(studioDir, "commits");
 const certFile = Deno.env.get("TLS_CERT_FILE");
 const keyFile = Deno.env.get("TLS_KEY_FILE");
 
-const stableDeployTokenPath = Deno.env.get("STABLE_DEPLOY_HASH_PATH") || "./stable-deploy-hash";
-const canaryDeployTokenPath = Deno.env.get("CANARY_DEPLOY_HASH_PATH") || "./canary-deploy-hash";
-const prDeployTokenPath = Deno.env.get("PR_DEPLOY_HASH_PATH") || "./pr-deploy-hash";
-
-async function tryGetDeployToken(path: string, environment: string) {
-	let token: string | null = null;
-	try {
-		token = await Deno.readTextFile(path);
-	} catch {
-		console.warn(`Failed to read ${environment} deploy hash at "${path}", deploying to ${environment} is not possible.`);
+function tryGetDeployToken(envKey: string, environment: string) {
+	const token = Deno.env.get(envKey) ?? null;
+	if (!token) {
+		console.warn(`Environment variable "${envKey}" is not set, deploying to ${environment} is not possible.`);
 	}
 	return token;
 }
 
-export const stableDeployToken = await tryGetDeployToken(stableDeployTokenPath, "stable");
-export const canaryDeployToken = await tryGetDeployToken(canaryDeployTokenPath, "canary");
-export const prDeployToken = await tryGetDeployToken(prDeployTokenPath, "pr");
+export const prDeployToken = tryGetDeployToken("PR_DEPLOY_HASH", "pr");
+export const canaryDeployToken = tryGetDeployToken("CANARY_DEPLOY_HASH", "canary");
+export const stableDeployToken = tryGetDeployToken("STABLE_DEPLOY_HASH", "stable");
 
 await fs.ensureDir(wwwDir);
 await fs.ensureDir(studioDir);
