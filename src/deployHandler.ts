@@ -59,31 +59,23 @@ export async function deployHandler(req: Request) {
  */
 async function validateDeployToken(request: Request, expectedToken: string | null) {
 	if (!expectedToken || !expectedToken.trim()) {
-		return new Response("No deploy token set on the server.", {
-			status: 500,
-		});
+		throw new errors.InternalServerError("No deploy token set on the server.");
 	}
 	let token;
 	const tokenHeader = request.headers.get("Authorization");
 	if (tokenHeader) {
 		const split = tokenHeader.split(" ");
 		if (split[0] != "DeployToken") {
-			return new Response("Invalid authorization type", {
-				status: 401,
-			});
+			throw new errors.BadRequest("Invalid authorization type");
 		}
 		token = split[1];
 	}
 	if (!token) {
-		return new Response("Missing deploy token", {
-			status: 401,
-		});
+		throw new errors.BadRequest("Missing deploy token");
 	}
 	const hash = await digestString(token);
 	if (hash != expectedToken.trim()) {
-		return new Response("Invalid token", {
-			status: 401,
-		});
+		throw new errors.BadRequest("Invalid token");
 	}
 }
 
