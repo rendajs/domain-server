@@ -8,14 +8,6 @@ import { resolve } from "https://deno.land/std@0.152.0/path/mod.ts";
 import { errors, isHttpError } from "https://deno.land/std@0.152.0/http/http_errors.ts";
 import { purgeUrl } from "./cloudflare.ts";
 
-/**
- * Removes the leading 'v' from the version if it exists.
- */
-export function sanitizeVersionString(version: string) {
-	if (version.startsWith("v")) version = version.slice(1);
-	return version;
-}
-
 export async function deployHandler(req: Request) {
 	if (req.method != "POST") {
 		return new Response("Deploy needs to be a POST request.", {
@@ -33,9 +25,11 @@ export async function deployHandler(req: Request) {
 		await validateDeployToken(req, stagingDeployToken);
 
 		const deployDirs = ["staging"];
-		const versionString = url.searchParams.get("version");
+		let versionString = url.searchParams.get("version");
 		if (versionString) {
-			deployDirs.push("versions/" + sanitizeVersionString(versionString));
+			if (versionString.startsWith("v")) versionString = versionString.slice(1);
+			versionString = versionString.replaceAll(".", "-");
+			deployDirs.push("versions/" + versionString);
 		}
 		await deployArchive(req, deployDirs);
 
