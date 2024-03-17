@@ -19,6 +19,7 @@ export const studioDir = resolve(wwwDir, "studio");
 const productionDir = resolve(studioDir, "production");
 const stagingDir = resolve(studioDir, "staging");
 const canaryDir = resolve(studioDir, "canary");
+const versionsDir = resolve(studioDir, "versions");
 const prDir = resolve(studioDir, "pr");
 const commitsDir = resolve(studioDir, "commits");
 const certFile = Deno.env.get("TLS_CERT_FILE");
@@ -42,6 +43,7 @@ await fs.ensureDir(studioDir);
 await fs.ensureDir(productionDir);
 await fs.ensureDir(stagingDir);
 await fs.ensureDir(canaryDir);
+await fs.ensureDir(versionsDir);
 await fs.ensureDir(commitsDir);
 await fs.ensureDir(prDir);
 
@@ -129,6 +131,9 @@ const handler: Handler = async (req, connInfo) => {
 			} else if (subdomain.startsWith("commit-")) {
 				const commitHash = subdomain.slice("commit-".length);
 				studioDir = resolve(commitsDir, commitHash);
+			} else if (subdomain.startsWith("v")) {
+				const version = subdomain.slice(1);
+				studioDir = resolve(versionsDir, version);
 			} else if (subdomain.startsWith("pr-")) {
 				const prId = parseInt(subdomain.slice(3), 10);
 				if (isNaN(prId) || prId <= 0) {
