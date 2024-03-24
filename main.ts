@@ -111,7 +111,11 @@ const handler: Handler = async (req, connInfo) => {
 			});
 		}
 
-		if (url.hostname == "renda.studio" || url.hostname.endsWith(".renda.studio")) {
+		if (url.hostname.startsWith("www.")) {
+			const redirectUrl = new URL(url.href);
+			redirectUrl.hostname = url.hostname.slice(4);
+			return Response.redirect(redirectUrl.href);
+		} else if (url.hostname == "renda.studio" || url.hostname.endsWith(".renda.studio")) {
 			let subdomain = "";
 			if (url.hostname.endsWith(".renda.studio")) {
 				subdomain = url.hostname.substring(0, url.hostname.length - ".renda.studio".length);
