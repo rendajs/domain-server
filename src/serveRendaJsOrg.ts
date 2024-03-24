@@ -13,6 +13,7 @@ export async function serveRendaJsOrg(request: Request, isLocalRequest = true) {
 			headers: request.headers,
 			method: request.method,
 			body: request.body,
+			redirect: "manual",
 		});
 	} catch {
 		let message;
